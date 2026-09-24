@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ave Businesshygiene GmbH – Angebots- und Kalkulationstool</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="Ave Businesshygiene GmbH">
+      <span>Angebots- und Kalkulationstool</span>
+    </div>
+
+    <nav class="nav" id="nav">
+      <a href="#/uebersicht" data-route="uebersicht">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>
+        Übersicht
+      </a>
+      <a href="#/kunde" data-route="kunde">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c1.1-3.4 3.3-5.2 6.2-5.2s5.1 1.8 6.2 5.2"/><line x1="18.5" y1="7" x2="18.5" y2="13"/><line x1="15.5" y1="10" x2="21.5" y2="10"/></svg>
+        Kunde anlegen
+      </a>
+      <a href="#/grundriss" data-route="grundriss">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3L3 5v16l6-2 6 2 6-2V3l-6 2-6-2Z"/><line x1="9" y1="3" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="21"/></svg>
+        Grundriss
+      </a>
+      <a href="#/raumbuch" data-route="raumbuch">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="1.8"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+        Raumbuch
+      </a>
+      <a href="#/kalkulation" data-route="kalkulation">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="7.5" x2="16" y2="7.5"/><line x1="8.3" y1="12" x2="8.3" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.7" y1="12" x2="15.7" y2="12"/><line x1="8.3" y1="15.5" x2="8.3" y2="15.5"/><line x1="12" y1="15.5" x2="12" y2="15.5"/><line x1="15.7" y1="15.5" x2="15.7" y2="15.5"/></svg>
+        Kalkulation
+      </a>
+      <a href="#/ausschreibung" data-route="ausschreibung">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><circle cx="11.2" cy="14" r="2.6"/><line x1="13.2" y1="16" x2="15.3" y2="18.1"/></svg>
+        Ausschreibung
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <b id="userName">André Pires</b>
+      <span>Geschäftsführer</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page" id="view"></div>
+  </main>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

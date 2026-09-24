@@ -1,0 +1,5 @@
+# Netlify-Einstellungen für das Kalkulationstool
+# Veröffentlicht wird der ganze Ordner (kein Build-Schritt nötig).
+[build]
+  publish = "."
+  command = ""
