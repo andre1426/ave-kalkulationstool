@@ -6,7 +6,7 @@
  *   STORE       – Laden/Speichern/Seed der Daten
  *   HELFER      – Formatierung, Parsing, Icons
  *   VIEWS       – je eine render-Funktion pro Reiter
- *   ROUTER      – Hash-Routing (#/uebersicht, #/raumbuch, ...)
+ *   ROUTER      – Hash-Routing (#/uebersicht, #/raumbuch, #/lv, ...)
  */
 
 /* ============================== KONSTANTEN ============================== */
@@ -508,7 +508,7 @@ function viewRaumbuch() {
 
     <div class="actions split">
       <a class="btn btn-ghost" href="#/grundriss">Zurück</a>
-      <a class="btn btn-primary" href="#/kalkulation">Weiter: Kalkulation erstellen</a>
+      <a class="btn btn-primary" href="#/lv">Weiter: Leistungsverzeichnis</a>
     </div>`;
 
   view().querySelectorAll('tbody tr[data-i]').forEach(tr => {
@@ -530,6 +530,338 @@ function viewRaumbuch() {
     k.status = 'Raumbuch erstellt';
     save(); render();
   };
+}
+
+/* -------------------------- Leistungsverzeichnis ------------------------- */
+
+/** Turnus-Angaben für einzelne Tätigkeiten im Leistungsverzeichnis. */
+const LV_TURNUS = [
+  'bei jeder Reinigung',
+  '1× wöchentlich',
+  '2× wöchentlich',
+  '14-tägig',
+  '1× monatlich',
+  '1× vierteljährlich',
+  '2× jährlich',
+  '1× jährlich',
+  'bei Bedarf'
+];
+
+/**
+ * Standard-Leistungsverzeichnis der Gebäudereinigung (Unterhaltsreinigung).
+ * `stichworte` ordnen Räume aus dem Raumbuch über Name/Nutzung/Belag einem Bereich zu.
+ */
+const LV_VORLAGE = [
+  {
+    key: 'buero', name: 'Büro- und Besprechungsräume',
+    stichworte: ['büro', 'besprech', 'konferenz', 'meeting', 'arbeitsplatz', 'schulung', 'seminar'],
+    positionen: [
+      ['Papierkörbe entleeren, Müllbeutel bei Bedarf erneuern', 'bei jeder Reinigung'],
+      ['Hartböden feucht wischen', 'bei jeder Reinigung'],
+      ['Textile Beläge (Teppich) saugen', 'bei jeder Reinigung'],
+      ['Freie Arbeitsflächen von Tischen feucht abwischen', '1× wöchentlich'],
+      ['Türklinken, Lichtschalter und Griffbereiche desinfizierend reinigen', '1× wöchentlich'],
+      ['Stühle und Sitzmöbel abwischen bzw. absaugen', '1× monatlich'],
+      ['Fensterbänke, Heizkörper und Schränke (bis 1,80 m) feucht abwischen', '1× monatlich'],
+      ['Spinnweben entfernen', '1× monatlich'],
+      ['Teppichflecken entfernen', 'bei Bedarf']
+    ]
+  },
+  {
+    key: 'eingang', name: 'Eingangs- und Empfangsbereich',
+    stichworte: ['empfang', 'eingang', 'foyer', 'lobby', 'publikum', 'warte', 'anmeldung'],
+    positionen: [
+      ['Papierkörbe und Abfallbehälter entleeren', 'bei jeder Reinigung'],
+      ['Böden feucht wischen, Sauberlaufzonen saugen', 'bei jeder Reinigung'],
+      ['Empfangstresen und Ablagen feucht abwischen', 'bei jeder Reinigung'],
+      ['Glastüren und Türflügel von Fingerabdrücken befreien', 'bei jeder Reinigung'],
+      ['Sitzmöbel im Wartebereich reinigen', '1× wöchentlich'],
+      ['Briefkästen, Klingelanlage und Beschilderung abwischen', '1× wöchentlich']
+    ]
+  },
+  {
+    key: 'verkehr', name: 'Verkehrsflächen, Flure und Treppenhäuser',
+    stichworte: ['flur', 'gang', 'verkehr', 'treppe', 'aufzug', 'fahrstuhl', 'podest'],
+    positionen: [
+      ['Böden saugen bzw. feucht wischen', 'bei jeder Reinigung'],
+      ['Treppenstufen und Podeste feucht wischen', '1× wöchentlich'],
+      ['Handläufe und Geländer desinfizierend abwischen', '1× wöchentlich'],
+      ['Aufzugskabine reinigen (Boden, Wände, Bedientableau)', '1× wöchentlich'],
+      ['Türen, Türrahmen und Lichtschalter abwischen', '1× monatlich'],
+      ['Fußleisten und Heizkörper feucht abwischen', '1× monatlich']
+    ]
+  },
+  {
+    key: 'sanitaer', name: 'Sanitärräume',
+    stichworte: ['sanitär', 'wc', 'toilette', 'bad', 'dusch', 'umkleide', 'wasch'],
+    positionen: [
+      ['WC-Becken, Urinale und Waschbecken innen und außen desinfizierend reinigen', 'bei jeder Reinigung'],
+      ['Armaturen, Spiegel und Ablagen reinigen', 'bei jeder Reinigung'],
+      ['Seifen-, Papierhandtuch- und Toilettenpapierspender auffüllen (Material bauseits)', 'bei jeder Reinigung'],
+      ['Abfall- und Hygienebehälter entleeren', 'bei jeder Reinigung'],
+      ['Böden nass wischen mit desinfizierendem Reiniger', 'bei jeder Reinigung'],
+      ['Fliesenwände im Spritzbereich reinigen', '1× wöchentlich'],
+      ['Trennwände und Türen der Kabinen abwischen', '1× wöchentlich'],
+      ['Entkalkung von Armaturen und Keramik', '1× monatlich']
+    ]
+  },
+  {
+    key: 'kueche', name: 'Teeküchen und Sozialräume',
+    stichworte: ['küche', 'kueche', 'sozial', 'pause', 'kantine', 'aufenthalt', 'kaffee'],
+    positionen: [
+      ['Abfallbehälter entleeren, Mülltrennung beachten', 'bei jeder Reinigung'],
+      ['Arbeitsflächen, Spüle und Armaturen reinigen', 'bei jeder Reinigung'],
+      ['Tische und Stühle abwischen', 'bei jeder Reinigung'],
+      ['Böden feucht wischen', 'bei jeder Reinigung'],
+      ['Fronten von Schränken und Elektrogeräten außen abwischen', '1× wöchentlich'],
+      ['Kühlschrank innen reinigen (nach Leerung durch den Nutzer)', '1× monatlich'],
+      ['Mikrowelle innen reinigen', '1× wöchentlich']
+    ]
+  },
+  {
+    key: 'lager', name: 'Lager-, Technik- und Nebenräume',
+    stichworte: ['lager', 'technik', 'archiv', 'keller', 'neben', 'halle', 'server', 'garage'],
+    positionen: [
+      ['Böden kehren bzw. saugen', '1× wöchentlich'],
+      ['Abfallbehälter entleeren', '1× wöchentlich'],
+      ['Böden feucht wischen', '1× monatlich'],
+      ['Regale und Ablagen (frei zugänglich) entstauben', '1× vierteljährlich']
+    ]
+  },
+  {
+    key: 'glas', name: 'Glas- und Rahmenreinigung',
+    stichworte: ['glas', 'fenster', 'rahmen', 'verglasung'],
+    positionen: [
+      ['Fensterflächen innen und außen reinigen (ohne Hilfsmittel erreichbar)', '1× vierteljährlich'],
+      ['Fensterrahmen und Falze feucht reinigen', '2× jährlich'],
+      ['Glastrennwände und Glastüren beidseitig reinigen', '1× monatlich'],
+      ['Jalousien und Lamellen entstauben', '1× jährlich']
+    ]
+  },
+  {
+    key: 'allgemein', name: 'Allgemeine Leistungen',
+    stichworte: [],
+    positionen: [
+      ['Abfall zu den bauseitigen Sammelbehältern bringen', 'bei jeder Reinigung'],
+      ['Verwendung umweltschonender, zertifizierter Reinigungsmittel', 'bei jeder Reinigung'],
+      ['Fenster schließen, Licht löschen, Objekt verschließen', 'bei jeder Reinigung'],
+      ['Mängel und Schäden an den Auftraggeber melden', 'bei Bedarf'],
+      ['Qualitätskontrolle durch die Objektleitung', '1× monatlich']
+    ]
+  }
+];
+
+function lvBereichFuer(raum) {
+  const text = [raum.name, raum.nutzung, raum.belag].join(' ').toLowerCase();
+  const treffer = LV_VORLAGE.find(b => b.stichworte.some(w => text.includes(w)));
+  return treffer ? treffer.key : 'buero';
+}
+
+function lvBereichAusVorlage(vorlage) {
+  return {
+    id: neueId('b'), key: vorlage.key, name: vorlage.name,
+    positionen: vorlage.positionen.map(([text, turnus]) => ({ id: neueId('p'), text, turnus, aktiv: true }))
+  };
+}
+
+/** Erzeugt das LV mit allen Bereichen, die im Raumbuch vorkommen, plus allgemeinen Leistungen. */
+function standardLV(k) {
+  const keys = new Set(k.raeume.map(lvBereichFuer));
+  keys.add('allgemein');
+  return {
+    erstellt: heute(),
+    bereiche: LV_VORLAGE.filter(v => keys.has(v.key)).map(lvBereichAusVorlage)
+  };
+}
+
+function lvRaeume(k, bereich) {
+  return k.raeume.filter(r => lvBereichFuer(r) === bereich.key);
+}
+
+function viewLV() {
+  const k = kunde();
+  if (!k.lv) { k.lv = standardLV(k); save(); }
+  const ansicht = state.ui.lvAnsicht || 'bearbeiten';
+  const fehlend = LV_VORLAGE.filter(v => !k.lv.bereiche.some(b => b.key === v.key));
+
+  view().innerHTML = `
+    ${kundenLeiste()}
+    <div class="page-head">
+      <div>
+        <h1>Leistungsverzeichnis</h1>
+        <p class="lead">Tätigkeiten und Turnus der Gebäudereinigung je Bereich – erstellt aus dem Raumbuch.</p>
+      </div>
+      <div class="toggle no-print">
+        <button class="${ansicht === 'bearbeiten' ? 'on' : ''}" data-lvansicht="bearbeiten">Bearbeiten</button>
+        <button class="${ansicht === 'kunde' ? 'on' : ''}" data-lvansicht="kunde">Kundenvorschau</button>
+      </div>
+    </div>
+
+    ${ansicht === 'bearbeiten' ? `
+      <div class="note" style="margin:0 0 20px">${ICON.info}
+        <p>Räume werden über Name und Nutzung automatisch einem Bereich zugeordnet. Nicht benötigte Tätigkeiten abhaken,
+        Texte und Turnus direkt anpassen. „Neu aus Raumbuch erzeugen“ überschreibt alle Änderungen.</p>
+      </div>
+      ${k.lv.bereiche.map((b, bi) => lvBereichKarte(k, b, bi)).join('')}
+      <div class="card tight no-print" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <label class="field" for="lvNeu" style="margin:0">Bereich hinzufügen</label>
+        <select id="lvNeu" style="width:auto;min-width:260px">
+          ${fehlend.map(v => `<option value="${v.key}">${esc(v.name)}</option>`).join('')}
+          <option value="eigen">Eigener Bereich …</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="lvAddBereich">+ Hinzufügen</button>
+        <button class="link" id="lvReset" style="margin-left:auto">Neu aus Raumbuch erzeugen</button>
+      </div>` : lvDokument(k)}
+
+    <div class="actions split">
+      <a class="btn btn-ghost" href="#/raumbuch">Zurück</a>
+      <div class="group">
+        <button class="btn btn-ghost" id="lvPdf">Als PDF / drucken</button>
+        <a class="btn btn-primary" href="#/kalkulation">Weiter: Kalkulation erstellen</a>
+      </div>
+    </div>`;
+
+  const aendern = () => { k.updated = 'gerade eben'; save(); render(); };
+
+  view().querySelectorAll('[data-lvansicht]').forEach(b => {
+    b.onclick = () => { state.ui.lvAnsicht = b.dataset.lvansicht; save(); render(); };
+  });
+
+  view().querySelectorAll('[data-bi]').forEach(card => {
+    const bereich = k.lv.bereiche[+card.dataset.bi];
+    const titel = card.querySelector('[data-f="bereichName"]');
+    titel.onchange = () => { bereich.name = titel.value; aendern(); };
+    card.querySelector('[data-del-bereich]').onclick = () => {
+      if (!confirm(`Bereich „${bereich.name}“ mit allen Tätigkeiten entfernen?`)) return;
+      k.lv.bereiche.splice(+card.dataset.bi, 1); aendern();
+    };
+    card.querySelector('[data-add-pos]').onclick = () => {
+      bereich.positionen.push({ id: neueId('p'), text: 'Neue Tätigkeit', turnus: 'bei jeder Reinigung', aktiv: true });
+      aendern();
+    };
+    card.querySelectorAll('tr[data-pi]').forEach(tr => {
+      const pos = bereich.positionen[+tr.dataset.pi];
+      tr.querySelectorAll('[data-f]').forEach(el => {
+        el.onchange = () => {
+          pos[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value;
+          aendern();
+        };
+      });
+      tr.querySelector('[data-del-pos]').onclick = () => { bereich.positionen.splice(+tr.dataset.pi, 1); aendern(); };
+    });
+  });
+
+  const add = document.getElementById('lvAddBereich');
+  if (add) add.onclick = () => {
+    const key = document.getElementById('lvNeu').value;
+    const vorlage = LV_VORLAGE.find(v => v.key === key);
+    k.lv.bereiche.push(vorlage ? lvBereichAusVorlage(vorlage)
+      : { id: neueId('b'), key: 'eigen', name: 'Eigener Bereich', positionen: [] });
+    aendern();
+  };
+  const reset = document.getElementById('lvReset');
+  if (reset) reset.onclick = () => {
+    if (!confirm('Leistungsverzeichnis neu aus dem Raumbuch erzeugen? Eigene Änderungen gehen verloren.')) return;
+    k.lv = standardLV(k); aendern();
+  };
+
+  document.getElementById('lvPdf').onclick = () => {
+    if (state.ui.lvAnsicht !== 'kunde') { state.ui.lvAnsicht = 'kunde'; save(); render(); }
+    setTimeout(() => window.print(), 100);
+  };
+}
+
+function lvBereichKarte(k, b, bi) {
+  const raeume = lvRaeume(k, b);
+  const flaeche = raeume.reduce((s, r) => s + (r.flaeche || 0), 0);
+  return `
+    <div class="card flat lv-bereich" data-bi="${bi}">
+      <div class="lv-head">
+        <span class="lv-nr">${bi + 1}</span>
+        <input type="text" class="lv-titel" value="${esc(b.name)}" data-f="bereichName" aria-label="Bereichsname">
+        <button class="icon-btn" data-del-bereich aria-label="Bereich entfernen">${ICON.trash}</button>
+      </div>
+      <div class="lv-raeume hint">
+        ${raeume.length
+          ? `Räume: ${raeume.map(r => esc(r.name)).join(', ')} · ${zahl(flaeche, 0)} m²`
+          : b.key === 'allgemein' ? 'Gilt für das gesamte Objekt' : 'Keine Räume aus dem Raumbuch zugeordnet'}
+      </div>
+      <table>
+        <thead><tr><th style="width:52px"></th><th>Pos.</th><th>Tätigkeit</th><th>Turnus</th><th></th></tr></thead>
+        <tbody>
+          ${b.positionen.map((p, pi) => `
+            <tr data-pi="${pi}" class="${p.aktiv ? '' : 'lv-aus'}">
+              <td><input type="checkbox" class="lv-check" data-f="aktiv"${p.aktiv ? ' checked' : ''} aria-label="Tätigkeit aufnehmen"></td>
+              <td class="muted">${bi + 1}.${pi + 1}</td>
+              <td><input type="text" value="${esc(p.text)}" data-f="text"></td>
+              <td>${lvTurnusSelect(p.turnus)}</td>
+              <td class="right"><button class="icon-btn" data-del-pos aria-label="Tätigkeit löschen">${ICON.trash}</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="lv-foot"><button class="link" data-add-pos>+ Tätigkeit hinzufügen</button></div>
+    </div>`;
+}
+
+function lvTurnusSelect(value) {
+  const liste = LV_TURNUS.includes(value) ? LV_TURNUS : [value, ...LV_TURNUS];
+  return `<select class="lv-turnus" data-f="turnus">${liste
+    .map(t => `<option${t === value ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+}
+
+/** Druck-/Kundenfassung im Briefkopf-Layout des Angebots. */
+function lvDokument(k) {
+  const bereiche = k.lv.bereiche
+    .map(b => ({ ...b, positionen: b.positionen.filter(p => p.aktiv) }))
+    .filter(b => b.positionen.length);
+  const reinigung = k.raeume.length
+    ? [...new Set(k.raeume.filter(r => r.nutzung !== 'Glasflächen').map(r => r.turnus))].join(', ')
+    : '';
+
+  return `
+    <div class="offer">
+      <div class="offer-head">
+        <div>
+          <img src="assets/logo.png" alt="${esc(FIRMA.name)}">
+          <div class="small">${esc(FIRMA.strasse)} · ${esc(FIRMA.ort)}<br>${esc(FIRMA.email)}</div>
+        </div>
+        <div class="meta">
+          <b>Leistungsverzeichnis</b>
+          <div class="small">Anlage zum Angebot Nr. ${new Date().getFullYear()}-${String(state.kunden.indexOf(k) + 1).padStart(3, '0')}</div>
+          <div class="small">Datum: ${heute()}</div>
+        </div>
+      </div>
+
+      <div class="to">
+        <div class="eyebrow" style="color:var(--nav-icon)">Objekt</div>
+        ${esc(k.firma)}<br>${esc(k.objekt || '')}${k.strasse ? `<br>${esc(k.strasse)}` : ''}${k.ort ? `, ${esc(k.ort)}` : ''}
+      </div>
+
+      <div class="subject">Leistungsverzeichnis Unterhaltsreinigung</div>
+      <p>Die nachfolgend aufgeführten Leistungen werden im vereinbarten Reinigungsturnus${reinigung ? ` (${esc(reinigung)})` : ''} erbracht.
+      „Bei jeder Reinigung“ bezieht sich auf den jeweiligen Reinigungseinsatz des Bereichs laut Raumbuch.</p>
+
+      ${bereiche.map((b, bi) => {
+        const raeume = lvRaeume(k, b);
+        return `
+        <div class="lv-doc-bereich">
+          <h3>${bi + 1}. ${esc(b.name)}</h3>
+          ${raeume.length ? `<div class="small" style="margin:-6px 0 8px">${raeume.map(r => `${esc(r.name)} (${zahl(r.flaeche, 0)} m², ${esc(r.turnus)})`).join(' · ')}</div>` : ''}
+          <table>
+            <thead><tr><th style="width:60px">Pos.</th><th>Leistung</th><th class="right">Turnus</th></tr></thead>
+            <tbody>
+              ${b.positionen.map((p, pi) => `
+                <tr><td>${bi + 1}.${pi + 1}</td><td>${esc(p.text)}</td><td class="right">${esc(p.turnus)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      }).join('') || '<p>Noch keine Leistungen ausgewählt.</p>'}
+
+      <p class="terms" style="margin-top:28px">Reinigungsmittel, Geräte und Maschinen werden vom Auftragnehmer gestellt. Verbrauchsmaterialien
+      (Seife, Papierhandtücher, Toilettenpapier, Müllbeutel) sind bauseits zu stellen, sofern nicht anders vereinbart.
+      Sonderreinigungen (Grundreinigung, Teppichshampoonierung, Glasreinigung mit Hubsteiger) werden gesondert angeboten.</p>
+      <p class="sign">${esc(FIRMA.name)}<br>${esc(FIRMA.strasse)} · ${esc(FIRMA.ort)}</p>
+    </div>`;
 }
 
 /* ------------------------------ Kalkulation ------------------------------ */
@@ -558,7 +890,7 @@ function viewKalkulation() {
     ${ansicht === 'intern' ? internAnsicht(k, methode, s) : kundenAnsicht(k, s)}
 
     <div class="actions split">
-      <a class="btn btn-ghost" href="#/raumbuch">Zurück</a>
+      <a class="btn btn-ghost" href="#/lv">Zurück</a>
       <div class="group">
         <button class="btn btn-ghost" id="pdf">Als PDF / drucken</button>
         <button class="btn btn-primary" id="senden">Angebot an Kunden senden</button>
@@ -713,7 +1045,7 @@ function kundenAnsicht(k, s) {
         </tbody>
       </table>
 
-      <p class="terms">Das Angebot gilt vorbehaltlich einer abschließenden Objektbesichtigung. Laufzeit, Kündigungsfrist und weitere Konditionen entnehmen Sie bitte unseren Allgemeinen Geschäftsbedingungen.</p>
+      <p class="terms">Art und Umfang der Leistungen ergeben sich aus dem beiliegenden Leistungsverzeichnis. Das Angebot gilt vorbehaltlich einer abschließenden Objektbesichtigung. Laufzeit, Kündigungsfrist und weitere Konditionen entnehmen Sie bitte unseren Allgemeinen Geschäftsbedingungen.</p>
       <p class="sign">Mit freundlichen Grüßen<br><strong>${esc(FIRMA.gf)}</strong><br>Geschäftsführer, ${esc(FIRMA.name)}</p>
     </div>`;
 }
@@ -949,6 +1281,7 @@ const ROUTES = {
   kunde: viewKunde,
   grundriss: viewGrundriss,
   raumbuch: viewRaumbuch,
+  lv: viewLV,
   kalkulation: viewKalkulation,
   ausschreibung: viewAusschreibung
 };

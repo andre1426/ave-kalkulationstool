@@ -20,7 +20,7 @@ nichts dauerhaft – deshalb besser über den lokalen Server starten.
 |---|---|
 | `index.html` | Grundgerüst: Sidebar mit Navigation, Container für die Seiten |
 | `styles.css` | Designtokens (Schwarz-Gold), Karten, Tabellen, Stepper, Druck-Layout |
-| `app.js` | Daten, Berechnung, alle sechs Seiten, Hash-Router |
+| `app.js` | Daten, Berechnung, alle sieben Seiten, Hash-Router |
 | `assets/logo.png` | Firmenlogo (Sidebar und Briefkopf) |
 
 ## Reiter
@@ -29,8 +29,12 @@ nichts dauerhaft – deshalb besser über den lokalen Server starten.
 2. **Kunde anlegen** – Stammdaten Kunde und Objekt
 3. **Grundriss** – Upload oder Raumbuch per Text (`Büros 120 m², 2× pro Woche`)
 4. **Raumbuch** – bearbeitbare Räume mit Fläche, Belag, Nutzung, Turnus
-5. **Kalkulation** – zwei Berechnungsarten, Kundenvorschau als fertiges Angebot, Druck/PDF
-6. **Ausschreibung** – Unterlagen, KI-Einschätzung, Abgleich mit dem Firmenprofil
+5. **Leistungsverzeichnis** – Tätigkeiten und Turnus der Gebäudereinigung je Bereich
+   (Büro, Empfang, Verkehrsflächen, Sanitär, Teeküche, Lager, Glas, Allgemein). Wird aus dem
+   Raumbuch erzeugt (Zuordnung über Raumname/Nutzung), ist frei bearbeitbar und lässt sich als
+   Anlage zum Angebot drucken
+6. **Kalkulation** – zwei Berechnungsarten, Kundenvorschau als fertiges Angebot, Druck/PDF
+7. **Ausschreibung** – Unterlagen, KI-Einschätzung, Abgleich mit dem Firmenprofil
 
 ## Rechenlogik (`app.js`)
 
